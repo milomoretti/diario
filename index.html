@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Diario">
+<meta name="theme-color" content="#14110e">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Diario</title>
+<style>
+:root{
+  --bg:#14110e; --card:#1e1a16; --card2:#27221c; --line:#342d25;
+  --text:#efe6da; --muted:#9a8e80; --accent:#e8b25c; --accent2:#c48a35;
+  --red:#e26d5a; --green:#7fb77e;
+  --serif: ui-serif, "New York", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px}
+body{padding:env(safe-area-inset-top) 0 calc(78px + env(safe-area-inset-bottom))}
+main{max-width:640px;margin:0 auto;padding:12px 16px 24px}
+h1{font-family:var(--serif);font-weight:600;font-size:28px;margin:8px 0 2px}
+h2{font-family:var(--serif);font-weight:600;font-size:19px;margin:0 0 10px}
+.sub{color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+button{font:inherit;color:inherit;border:0;background:var(--card2);border-radius:12px;padding:10px 14px;cursor:pointer}
+button.primary{background:var(--accent);color:#1c1814;font-weight:600}
+button.ghost{background:transparent;color:var(--muted);padding:6px 8px}
+button:disabled{opacity:.5}
+textarea,input,select{font:inherit;color:var(--text);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;outline:none}
+textarea{resize:vertical;min-height:80px;font-family:var(--serif);font-size:16px;line-height:1.45}
+textarea:focus,input:focus{border-color:var(--accent2)}
+.row{display:flex;gap:8px;align-items:center}
+.row.between{justify-content:space-between}
+.grow{flex:1}
+.datebar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.datebar button{width:42px;height:42px;padding:0;font-size:20px;border-radius:50%}
+.datetitle{text-align:center;flex:1;position:relative}
+.datetitle input{position:absolute;inset:0;opacity:0}
+.moods{display:flex;justify-content:space-between;gap:6px}
+.moods button{flex:1;font-size:26px;padding:8px 0;background:var(--card2);filter:grayscale(1);opacity:.55}
+.moods button.on{filter:none;opacity:1;background:#3a2f22;outline:2px solid var(--accent2)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 12px;border-radius:999px;background:var(--card2);font-size:15px;border:1px solid var(--line)}
+.chip.on{background:#3a2f22;border-color:var(--accent)}
+.act{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.act:first-child{border-top:0}
+.act .em{font-size:22px;width:30px;text-align:center;padding-top:4px}
+.act .lbl{font-weight:600}
+.act input{margin-top:6px;padding:7px 10px;font-size:14px;background:transparent}
+.mic{width:64px;height:64px;border-radius:50%;font-size:28px;padding:0;background:var(--accent);color:#1c1814;flex:none}
+.mic.rec{background:var(--red);animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(226,109,90,.6)}70%{box-shadow:0 0 0 14px rgba(226,109,90,0)}100%{box-shadow:0 0 0 0 rgba(226,109,90,0)}}
+.thought{padding:12px 0;border-top:1px solid var(--line)}
+.thought:first-child{border-top:0}
+.thought .txt{font-family:var(--serif);font-size:16px;line-height:1.5;white-space:pre-wrap}
+.thought audio{width:100%;margin-top:8px;height:36px}
+.proposal{display:flex;gap:10px;align-items:flex-start;padding:8px 0}
+.proposal input[type=checkbox]{width:22px;height:22px;margin-top:2px;accent-color:var(--accent)}
+.dayitem{padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.dayitem:first-child{border-top:0}
+.dayitem .snip{font-family:var(--serif);color:#cfc3b4;font-size:15px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(20,17,14,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+.tabs button{flex:1;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);padding:6px 0}
+.tabs button span{font-size:22px}
+.tabs button.on{color:var(--accent)}
+.view{display:none}.view.on{display:block}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--accent);color:#1c1814;padding:10px 16px;border-radius:12px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:9;max-width:90%;text-align:center}
+.toast.on{opacity:1}
+.presetrow{display:grid;grid-template-columns:54px 1fr 36px;gap:6px;margin-bottom:6px}
+.presetrow input{padding:8px}
+.presetrow .kw{grid-column:2/3;font-size:13px;color:var(--muted)}
+.stat{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line);font-size:15px}
+.stat:first-child{border-top:0}
+.small{font-size:13px}
+.hint{color:var(--muted);font-size:13px;margin-top:8px;line-height:1.4}
+.timer{font-variant-numeric:tabular-nums;color:var(--red);font-weight:600}
+.memory{background:linear-gradient(135deg,#2c2318,#1e1a16)}
+.saved{color:var(--green);font-size:12px;transition:opacity .4s}
+</style>
+</head>
+<body>
+<main>
+
+<!-- ============ OGGI ============ -->
+<section id="v-today" class="view on">
+  <div class="datebar">
+    <button id="prevDay">‹</button>
+    <div class="datetitle">
+      <h1 id="dayTitle">Oggi</h1>
+      <div class="sub" id="daySub"></div>
+      <input type="date" id="datePick">
+    </div>
+    <button id="nextDay">›</button>
+  </div>
+
+  <div class="card">
+    <div class="row between"><h2>Com'è andata?</h2><span class="saved" id="savedFlag"></span></div>
+    <div class="moods" id="moods"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎙️ Racconta la giornata</h2>
+    <div class="row" style="align-items:flex-start">
+      <button class="mic" id="recapMic">🎙️</button>
+      <textarea id="recapText" class="grow" placeholder="Premi il microfono e racconta cosa hai fatto oggi… (oppure scrivi / usa la dettatura della tastiera)"></textarea>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary grow" id="analyzeBtn">✨ Estrai attività</button>
+    </div>
+    <div id="proposals"></div>
+  </div>
+
+  <div class="card">
+    <h2>Cose fatte</h2>
+    <div class="chips" id="presetChips"></div>
+    <div id="actList" style="margin-top:10px"></div>
+    <div class="row" style="margin-top:10px">
+      <input id="customAct" placeholder="Altra attività…">
+      <button id="addCustom">＋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Resoconto</h2>
+    <textarea id="summary" rows="5" placeholder="Com'è andata la giornata, cosa vuoi ricordare tra 10 anni…"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="row between"><h2>Pensieri del giorno</h2><button class="ghost" id="goThoughts">＋ nuovo</button></div>
+    <div id="dayThoughts"></div>
+  </div>
+</section>
+
+<!-- ============ PENSIERI ============ -->
+<section id="v-thoughts" class="view">
+  <h1>Pensieri</h1>
+  <div class="sub">Riflessioni scritte o vocali</div>
+  <div class="card">
+    <textarea id="thText" rows="4" placeholder="A cosa stai pensando?"></textarea>
+    <div id="thAudioPreview"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="mic" id="thMic" style="width:52px;height:52px;font-size:22px">🎙️</button>
+      <span class="timer" id="thTimer"></span>
+      <div class="grow"></div>
+      <button class="primary" id="thSave">Salva</button>
+    </div>
+    <div class="hint">Il vocale viene salvato come audio. Se il browser lo permette viene anche trascritto in automatico nel testo.</div>
+  </div>
+  <div class="card"><div id="thList"></div></div>
+</section>
+
+<!-- ============ ARCHIVIO ============ -->
+<section id="v-archive" class="view">
+  <h1>Archivio</h1>
+  <input id="search" placeholder="🔍 Cerca in giorni e pensieri…" style="margin-top:10px">
+  <div id="onThisDay"></div>
+  <div class="card" id="statsCard"></div>
+  <div class="card"><div id="dayList"></div></div>
+</section>
+
+<!-- ============ IMPOSTAZIONI ============ -->
+<section id="v-settings" class="view">
+  <h1>Impostazioni</h1>
+
+  <div class="card">
+    <h2>Attività preimpostate</h2>
+    <div class="hint" style="margin:0 0 10px">Emoji, nome e parole chiave (separate da virgola) usate per riconoscerle nei vocali.</div>
+    <div id="presetEditor"></div>
+    <div class="row" style="margin-top:8px">
+      <button id="addPreset">＋ Aggiungi</button>
+      <div class="grow"></div>
+      <button class="primary" id="savePresets">Salva</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Intelligenza artificiale</h2>
+    <div class="hint" style="margin:0 0 10px">Con una chiave API Anthropic l'app capisce il vocale e crea le attività in modo preciso. Senza chiave usa le parole chiave delle attività.</div>
+    <input id="apiKey" type="password" placeholder="sk-ant-…" autocomplete="off">
+    <input id="model" placeholder="Modello" style="margin-top:8px">
+    <button class="primary" id="saveAi" style="margin-top:8px;width:100%">Salva</button>
+  </div>
+
+  <div class="card">
+    <h2>Backup</h2>
+    <div class="hint" style="margin:0 0 10px" id="backupInfo"></div>
+    <div class="row">
+      <button class="primary grow" id="exportBtn">⬇️ Esporta backup</button>
+      <button class="grow" id="importBtn">⬆️ Importa</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+    <div class="hint">I dati sono salvati solo su questo telefono. Esporta un backup ogni tanto (es. ogni mese) e salvalo su iCloud Drive: è l'unico modo per non perderli se cambi telefono.</div>
+  </div>
+</section>
+
+</main>
+
+<nav class="tabs">
+  <button data-v="today" class="on"><span>📖</span>Giornata</button>
+  <button data-v="thoughts"><span>💭</span>Pensieri</button>
+  <button data-v="archive"><span>🗂️</span>Archivio</button>
+  <button data-v="settings"><span>⚙️</span>Impostazioni</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =================== UTIL =================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = n => String(n).padStart(2, '0');
+const dstr = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseD = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const today = () => dstr(new Date());
+const addDays = (s, n) => { const d = parseD(s); d.setDate(d.getDate()+n); return dstr(d); };
+const fmtLong = s => parseD(s).toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+const fmtShort = s => parseD(s).toLocaleDateString('it-IT', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2200); }
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+/* =================== DATABASE (IndexedDB) =================== */
+const DB = {
+  db: null,
+  open(){ return new Promise((res, rej) => {
+    const r = indexedDB.open('diario', 1);
+    r.onupgradeneeded = () => {
+      const db = r.result;
+      db.createObjectStore('days', { keyPath: 'date' });
+      const th = db.createObjectStore('thoughts', { keyPath: 'id' });
+      th.createIndex('date', 'date');
+      db.createObjectStore('settings', { keyPath: 'key' });
+    };
+    r.onsuccess = () => { this.db = r.result; res(); };
+    r.onerror = () => rej(r.error);
+  });},
+  tx(store, mode, fn){ return new Promise((res, rej) => {
+    const t = this.db.transaction(store, mode); const s = t.objectStore(store);
+    const r = fn(s); t.oncomplete = () => res(r?.result); t.onerror = () => rej(t.error);
+  });},
+  get(store, key){ return this.tx(store, 'readonly', s => s.get(key)); },
+  put(store, val){ return this.tx(store, 'readwrite', s => s.put(val)); },
+  del(store, key){ return this.tx(store, 'readwrite', s => s.delete(key)); },
+  all(store){ return this.tx(store, 'readonly', s => s.getAll()); },
+  byDate(date){ return this.tx('thoughts', 'readonly', s => s.index('date').getAll(date)); },
+  async setting(key, def){ const r = await this.get('settings', key); return r ? r.value : def; },
+  saveSetting(key, value){ return this.put('settings', { key, value }); }
+};
+
+/* =================== DEFAULT =================== */
+const DEFAULT_PRESETS = [
+  { id:'uni',    emoji:'🎓', label:'Università', kw:'università,universita,uni,lezione,lezioni,escp,corso,esame,aula,campus' },
+  { id:'studio', emoji:'📚', label:'Studio', kw:'studiato,studiare,studio,ripassato,biblioteca,compiti' },
+  { id:'gym',    emoji:'🏋️', label:'Palestra', kw:'palestra,gym,allenamento,allenato,pesi,workout' },
+  { id:'sport',  emoji:'🏃', label:'Sport / corsa', kw:'corsa,corso a correre,correre,calcio,padel,tennis,nuoto,bici,sci' },
+  { id:'work',   emoji:'💻', label:'Lavoro / progetti', kw:'lavorato,lavoro,cliente,fiverr,progetto,sito,automazione,codice,n8n,framer' },
+  { id:'friends',emoji:'🍻', label:'Amici', kw:'amici,amico,amica,aperitivo,birra,serata con' },
+  { id:'family', emoji:'👨‍👩‍👦', label:'Famiglia', kw:'famiglia,papà,papa,mamma,nonna,nonno,fratello,sorella,genitori' },
+  { id:'food',   emoji:'🍝', label:'Pranzo / cena fuori', kw:'ristorante,cena fuori,pranzo fuori,trattoria,pizzeria,sushi,brunch' },
+  { id:'out',    emoji:'🌙', label:'Uscita / serata', kw:'uscito,uscita,festa,discoteca,locale,serata,concerto' },
+  { id:'travel', emoji:'✈️', label:'Viaggio', kw:'viaggio,treno,aereo,volo,partito,arrivato a,gita' },
+  { id:'relax',  emoji:'🎬', label:'Relax / serie', kw:'film,serie,netflix,relax,riposato,divano,videogioch' },
+  { id:'read',   emoji:'📖', label:'Lettura', kw:'letto,lettura,libro' },
+];
+const MOODS = ['😞','😕','😐','🙂','😄'];
+const DEFAULT_MODEL = 'claude-haiku-5-5';
+
+/* =================== STATE =================== */
+const S = { date: today(), day: null, presets: [], apiKey: '', model: DEFAULT_MODEL };
+const emptyDay = date => ({ date, mood: null, activities: [], summary: '', recap: '', updatedAt: null });
+
+async function loadDay(date){
+  S.date = date;
+  S.day = (await DB.get('days', date)) || emptyDay(date);
+  renderToday();
+}
+async function saveDay(){
+  S.day.updatedAt = Date.now();
+  const d = S.day;
+  const empty = !d.mood && !d.activities.length && !d.summary.trim() && !d.recap.trim();
+  if (empty) await DB.del('days', d.date); else await DB.put('days', structuredClone(d));
+  const f = $('#savedFlag'); f.textContent = '✓ salvato'; f.style.opacity = 1;
+  setTimeout(() => f.style.opacity = 0, 1200);
+}
+const saveDayLater = debounce(saveDay, 500);
+
+/* =================== RENDER: OGGI =================== */
+function renderToday(){
+  const t = today(), d = S.date;
+  $('#dayTitle').textContent = d === t ? 'Oggi' : d === addDays(t,-1) ? 'Ieri' : cap(parseD(d).toLocaleDateString('it-IT',{weekday:'long'}));
+  $('#daySub').textContent = fmtLong(d);
+  $('#datePick').value = d;
+  $('#nextDay').disabled = d >= t;
+
+  $('#moods').innerHTML = MOODS.map((m,i) => `<button data-m="${i+1}" class="${S.day.mood===i+1?'on':''}">${m}</button>`).join('');
+
+  const used = new Set(S.day.activities.map(a => a.presetId).filter(Boolean));
+  $('#presetChips').innerHTML = S.presets.map(p => `<button class="chip ${used.has(p.id)?'on':''}" data-p="${p.id}">${p.emoji} ${esc(p.label)}</button>`).join('');
+
+  $('#actList').innerHTML = S.day.activities.map(a => `
+    <div class="act" data-a="${a.id}">
+      <div class="em">${a.emoji || '•'}</div>
+      <div class="grow">
+        <div class="row between"><span class="lbl">${esc(a.label)}</span><button class="ghost" data-del="${a.id}">✕</button></div>
+        <input data-note="${a.id}" value="${esc(a.note)}" placeholder="Dettagli (con chi, dove, cosa…)">
+      </div>
+    </div>`).join('');
+
+  $('#summary').value = S.day.summary;
+  $('#recapText').value = S.day.recap;
+  $('#proposals').innerHTML = '';
+  renderDayThoughts();
+}
+
+async function renderDayThoughts(){
+  const list = (await DB.byDate(S.date)).sort((a,b) => a.createdAt - b.createdAt);
+  $('#dayThoughts').innerHTML = list.length ? list.map(thoughtHTML).join('') : '<div class="sub">Nessun pensiero per questo giorno.</div>';
+  attachAudio($('#dayThoughts'), list);
+}
+
+function addActivity(a){
+  S.day.activities.push({ id: uid(), presetId: a.presetId || null, label: a.label, emoji: a.emoji || '•', note: a.note || '' });
+}
+
+/* =================== EVENTI: OGGI =================== */
+$('#prevDay').onclick = () => loadDay(addDays(S.date, -1));
+$('#nextDay').onclick = () => { if (S.date < today()) loadDay(addDays(S.date, 1)); };
+$('#datePick').onchange = e => { if (e.target.value) loadDay(e.target.value > today() ? today() : e.target.value); };
+$('#dayTitle').onclick = () => { if (S.date !== today()) loadDay(today()); };
+
+$('#moods').onclick = e => {
+  const b = e.target.closest('[data-m]'); if (!b) return;
+  const m = +b.dataset.m; S.day.mood = S.day.mood === m ? null : m; saveDay(); renderToday();
+};
+$('#presetChips').onclick = e => {
+  const b = e.target.closest('[data-p]'); if (!b) return;
+  const p = S.presets.find(x => x.id === b.dataset.p);
+  const i = S.day.activities.findIndex(a => a.presetId === p.id);
+  if (i >= 0 && !S.day.activities[i].note) S.day.activities.splice(i, 1);
+  else if (i < 0) addActivity({ presetId: p.id, label: p.label, emoji: p.emoji });
+  else { toast('Ha dei dettagli: eliminala con ✕'); return; }
+  saveDay(); renderToday();
+};
+$('#actList').onclick = e => {
+  const id = e.target.dataset.del; if (!id) return;
+  S.day.activities = S.day.activities.filter(a => a.id !== id); saveDay(); renderToday();
+};
+$('#actList').oninput = e => {
+  const id = e.target.dataset.note; if (!id) return;
+  S.day.activities.find(a => a.id === id).note = e.target.value; saveDayLater();
+};
+$('#addCustom').onclick = () => {
+  const v = $('#customAct').value.trim(); if (!v) return;
+  addActivity({ label: v, emoji: '📌' }); $('#customAct').value = ''; saveDay(); renderToday();
+};
+$('#customAct').onkeydown = e => { if (e.key === 'Enter') $('#addCustom').click(); };
+$('#summary').oninput = e => { S.day.summary = e.target.value; saveDayLater(); };
+$('#recapText').oninput = e => { S.day.recap = e.target.value; saveDayLater(); };
+$('#goThoughts').onclick = () => { thoughtDate = S.date; show('thoughts'); $('#thText').focus(); };
+
+/* =================== RICONOSCIMENTO VOCALE =================== */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function makeRecognizer(onUpdate){
+  if (!SR) return null;
+  const r = new SR(); r.lang = 'it-IT'; r.continuous = true; r.interimResults = true;
+  let final = '', active = false;
+  r.onresult = e => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t.trim() + ' '; else interim += t;
+    }
+    onUpdate(final, interim);
+  };
+  r.onend = () => { if (active) { try { r.start(); } catch(_){} } };
+  r.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { active = false; toast('Microfono/dettatura non consentiti'); } };
+  return {
+    start(){ final = ''; active = true; try { r.start(); } catch(_){} },
+    stop(){ active = false; try { r.stop(); } catch(_){} return final; },
+    get text(){ return final; }
+  };
+}
+
+/* --- Racconto giornata --- */
+let recapRec = null, recapBase = '';
+$('#recapMic').onclick = () => {
+  const btn = $('#recapMic');
+  if (recapRec) { recapRec.stop(); recapRec = null; btn.classList.remove('rec'); btn.textContent = '🎙️'; saveDay(); return; }
+  if (!SR) { toast('Usa il tasto 🎤 della tastiera per dettare'); $('#recapText').focus(); return; }
+  recapBase = $('#recapText').value.trim(); if (recapBase) recapBase += ' ';
+  recapRec = makeRecognizer((fin, int) => {
+    const v = recapBase + fin + int; $('#recapText').value = v; S.day.recap = recapBase + fin;
+  });
+  recapRec.start(); btn.classList.add('rec'); btn.textContent = '■';
+};
+
+/* --- Estrazione attività --- */
+$('#analyzeBtn').onclick = async () => {
+  if (recapRec) $('#recapMic').click();
+  const text = $('#recapText').value.trim();
+  if (!text) { toast('Prima racconta o scrivi la giornata'); return; }
+  const btn = $('#analyzeBtn'); btn.disabled = true; btn.textContent = '⏳ Analizzo…';
+  let result;
+  try { result = S.apiKey ? await aiParse(text) : localParse(text); }
+  catch (err) { console.error(err); toast('AI non raggiungibile, uso le parole chiave'); result = localParse(text); }
+  btn.disabled = false; btn.textContent = '✨ Estrai attività';
+  showProposals(result);
+};
+
+async function aiParse(text){
+  const presetList = S.presets.map(p => `- id "${p.id}": ${p.emoji} ${p.label}`).join('\n');
+  const system = `Sei l'assistente del diario personale di Milo. Ricevi il racconto (spesso trascritto a voce, quindi con errori) della sua giornata e lo trasformi in voci di diario.
+Attività preimpostate disponibili:
+${presetList}
+
+Regole:
+- Ogni cosa concreta che ha fatto diventa un'attività. Se corrisponde a un preset usa il suo id in "preset" e la sua etichetta, altrimenti preset null, una label breve (1-3 parole) e una emoji adatta.
+- Non duplicare: una sola voce per preset, unisci i dettagli nella nota.
+- "note": dettagli utili da ricordare tra 10 anni (con chi, dove, cosa), in prima persona, conciso. Vuoto se non ci sono dettagli.
+- "summary": resoconto della giornata in 2-4 frasi in prima persona, tono naturale, corretto grammaticalmente.
+- "thoughts": riflessioni, sensazioni o idee personali espresse (non fatti), riformulate in prima persona. Array vuoto se non ce ne sono.
+- "mood": da 1 (pessima) a 5 (ottima) se si capisce, altrimenti null.
+Rispondi SOLO con JSON valido, senza testo prima o dopo:
+{"activities":[{"preset":"id|null","label":"","emoji":"","note":""}],"summary":"","thoughts":[],"mood":null}`;
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': S.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ model: S.model || DEFAULT_MODEL, max_tokens: 2000, system, messages: [{ role: 'user', content: `Data: ${fmtLong(S.date)}\n\nRacconto:\n${text}` }] })
+  });
+  if (!r.ok) throw new Error('API ' + r.status + ' ' + (await r.text()));
+  const data = await r.json();
+  const raw = data.content.map(c => c.text || '').join('');
+  const json = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+  json.activities = (json.activities || []).map(a => {
+    const p = S.presets.find(x => x.id === a.preset);
+    return { presetId: p ? p.id : null, label: p ? p.label : (a.label || 'Attività'), emoji: p ? p.emoji : (a.emoji || '📌'), note: a.note || '' };
+  });
+  json.source = 'ai';
+  return json;
+}
+
+function localParse(text){
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const sentences = text.split(/(?<=[.!?])\s+|\s+(?:e poi|poi|dopo|dopodiché|dopodiche|infine|alla fine)\s+/i).map(s => s.trim()).filter(Boolean);
+  const found = new Map(); const rest = [];
+  for (const s of sentences) {
+    const ns = norm(s); let hit = false;
+    for (const p of S.presets) {
+      const kws = p.kw.split(',').map(k => norm(k.trim())).filter(Boolean);
+      if (kws.some(k => ns.includes(k))) {
+        hit = true;
+        const prev = found.get(p.id);
+        found.set(p.id, { presetId: p.id, label: p.label, emoji: p.emoji, note: prev ? prev.note + ' · ' + s : s });
+      }
+    }
+    if (!hit) rest.push(s);
+  }
+  return { activities: [...found.values()], summary: '', thoughts: [], mood: null, unmatched: rest, source: 'local' };
+}
+
+let lastProposal = null;
+function showProposals(res){
+  lastProposal = res;
+  const acts = res.activities || [];
+  let h = `<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+    <div class="sub" style="margin-bottom:6px">${res.source === 'ai' ? 'Ecco cosa ho capito — togli la spunta a quello che non vuoi:' : 'Riconosciute con le parole chiave (aggiungi una chiave API in Impostazioni per risultati migliori):'}</div>`;
+  if (!acts.length) h += '<div class="sub">Nessuna attività riconosciuta.</div>';
+  h += acts.map((a,i) => `<label class="proposal"><input type="checkbox" checked data-pa="${i}"><div><b>${a.emoji} ${esc(a.label)}</b>${a.note ? `<div class="small" style="color:#cfc3b4">${esc(a.note)}</div>` : ''}</div></label>`).join('');
+  if (res.summary) h += `<label class="proposal"><input type="checkbox" checked data-ps><div><b>📝 Resoconto</b><div class="small" style="color:#cfc3b4;font-family:var(--serif)">${esc(res.summary)}</div></div></label>`;
+  (res.thoughts || []).forEach((t,i) => h += `<label class="proposal"><input type="checkbox" checked data-pt="${i}"><div><b>💭 Pensiero</b><div class="small" style="color:#cfc3b4;font-family:var(--serif)">${esc(t)}</div></div></label>`);
+  if (res.mood) h += `<label class="proposal"><input type="checkbox" checked data-pm><div><b>Umore ${MOODS[res.mood-1]}</b></div></label>`;
+  if (res.unmatched?.length) h += `<label class="proposal"><input type="checkbox" checked data-pu><div><b>📝 Altro nel resoconto</b><div class="small" style="color:#cfc3b4">${esc(res.unmatched.join(' '))}</div></div></label>`;
+  h += `<div class="row" style="margin-top:8px"><button class="ghost" id="propCancel">Annulla</button><div class="grow"></div><button class="primary" id="propOk">Aggiungi al diario</button></div></div>`;
+  $('#proposals').innerHTML = h;
+  $('#propCancel').onclick = () => $('#proposals').innerHTML = '';
+  $('#propOk').onclick = applyProposals;
+}
+
+async function applyProposals(){
+  const r = lastProposal, box = $('#proposals');
+  const checked = sel => box.querySelector(sel)?.checked;
+  (r.activities || []).forEach((a, i) => {
+    if (!checked(`[data-pa="${i}"]`)) return;
+    const ex = a.presetId && S.day.activities.find(x => x.presetId === a.presetId);
+    if (ex) ex.note = [ex.note, a.note].filter(Boolean).join(' · ');
+    else addActivity(a);
+  });
+  const addSum = t => { S.day.summary = S.day.summary.trim() ? S.day.summary.trim() + '\n\n' + t : t; };
+  if (r.summary && checked('[data-ps]')) addSum(r.summary);
+  if (r.unmatched?.length && checked('[data-pu]')) addSum(r.unmatched.join(' '));
+  if (r.mood && checked('[data-pm]')) S.day.mood = r.mood;
+  for (const [i, t] of (r.thoughts || []).entries()) {
+    if (checked(`[data-pt="${i}"]`)) await DB.put('thoughts', { id: uid(), date: S.date, createdAt: Date.now() + i, text: t, audio: null, mime: null, duration: 0 });
+  }
+  await saveDay(); renderToday(); toast('Aggiunto al diario ✓');
+}
+
+/* =================== PENSIERI =================== */
+let thoughtDate = null;          // se aperto da un giorno specifico
+let mediaRec = null, chunks = [], pendingAudio = null, recStart = 0, timerI = null, thRecog = null, thBase = '';
+
+function thoughtHTML(t){
+  const time = new Date(t.createdAt).toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
+  return `<div class="thought" data-t="${t.id}">
+    <div class="row between"><span class="sub">${t.date === dstr(new Date(t.createdAt)) ? fmtShort(t.date) + ' · ' + time : fmtShort(t.date)}${t.audio ? ' · 🎙️ ' + fmtDur(t.duration) : ''}</span><button class="ghost" data-tdel="${t.id}">✕</button></div>
+    ${t.text ? `<div class="txt">${esc(t.text)}</div>` : ''}
+    ${t.audio ? `<audio controls preload="metadata" data-audio="${t.id}"></audio>` : ''}
+  </div>`;
+}
+const fmtDur = s => `${Math.floor(s/60)}:${pad(Math.round(s%60))}`;
+const audioURLs = [];
+function attachAudio(root, list){
+  root.querySelectorAll('[data-audio]').forEach(el => {
+    const t = list.find(x => x.id === el.dataset.audio);
+    if (t?.audio) { const u = URL.createObjectURL(t.audio); audioURLs.push(u); el.src = u; }
+  });
+}
+document.addEventListener('click', async e => {
+  const id = e.target.dataset?.tdel; if (!id) return;
+  if (!confirm('Eliminare questo pensiero?')) return;
+  await DB.del('thoughts', id); renderThoughts(); renderDayThoughts();
+});
+
+async function renderThoughts(){
+  audioURLs.splice(0).forEach(u => URL.revokeObjectURL(u));
+  const list = (await DB.all('thoughts')).sort((a,b) => b.createdAt - a.createdAt);
+  $('#thList').innerHTML = list.length ? list.map(thoughtHTML).join('') : '<div class="sub">Ancora nessun pensiero.</div>';
+  attachAudio($('#thList'), list);
+  $('#thText').placeholder = thoughtDate && thoughtDate !== today() ? `Pensiero per ${fmtShort(thoughtDate)}…` : 'A cosa stai pensando?';
+}
+
+function pickMime(){
+  if (!window.MediaRecorder) return null;
+  for (const m of ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg']) if (MediaRecorder.isTypeSupported?.(m)) return m;
+  return '';
+}
+
+$('#thMic').onclick = async () => {
+  const btn = $('#thMic');
+  if (mediaRec) { mediaRec.stop(); return; }
+  const mime = pickMime();
+  if (mime === null) { toast('Registrazione audio non supportata'); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch { toast('Permesso microfono negato'); return; }
+  chunks = [];
+  mediaRec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  mediaRec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  mediaRec.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    const type = mediaRec.mimeType || mime || 'audio/mp4';
+    pendingAudio = { blob: new Blob(chunks, { type }), mime: type, duration: (Date.now() - recStart) / 1000 };
+    mediaRec = null; clearInterval(timerI); $('#thTimer').textContent = '';
+    btn.classList.remove('rec'); btn.textContent = '🎙️';
+    if (thRecog) { thRecog.stop(); thRecog = null; }
+    renderPending();
+  };
+  mediaRec.start(1000); recStart = Date.now();
+  btn.classList.add('rec'); btn.textContent = '■';
+  timerI = setInterval(() => $('#thTimer').textContent = fmtDur((Date.now() - recStart) / 1000), 500);
+  // trascrizione in parallelo (se il browser lo supporta)
+  thBase = $('#thText').value.trim(); if (thBase) thBase += ' ';
+  thRecog = makeRecognizer((fin, int) => { $('#thText').value = thBase + fin + int; });
+  thRecog?.start();
+};
+
+function renderPending(){
+  if (!pendingAudio) { $('#thAudioPreview').innerHTML = ''; return; }
+  const u = URL.createObjectURL(pendingAudio.blob);
+  $('#thAudioPreview').innerHTML = `<div class="row" style="margin-top:8px"><audio controls src="${u}" class="grow" style="height:36px"></audio><button class="ghost" id="thDiscard">✕</button></div>`;
+  $('#thDiscard').onclick = () => { pendingAudio = null; renderPending(); };
+}
+
+$('#thSave').onclick = async () => {
+  if (mediaRec) { toast('Ferma prima la registrazione'); return; }
+  const text = $('#thText').value.trim();
+  if (!text && !pendingAudio) { toast('Scrivi o registra qualcosa'); return; }
+  const date = thoughtDate || today();
+  await DB.put('thoughts', { id: uid(), date, createdAt: Date.now(), text, audio: pendingAudio?.blob || null, mime: pendingAudio?.mime || null, duration: pendingAudio?.duration || 0 });
+  $('#thText').value = ''; pendingAudio = null; renderPending();
+  toast('Pensiero salvato ✓'); renderThoughts();
+  if (date === S.date) renderDayThoughts();
+};
+
+/* =================== ARCHIVIO =================== */
+async function renderArchive(){
+  const q = $('#search').value.trim().toLowerCase();
+  const days = (await DB.all('days')).sort((a,b) => b.date.localeCompare(a.date));
+  const thoughts = await DB.all('thoughts');
+  const thByDate = {}; thoughts.forEach(t => (thByDate[t.date] ||= []).push(t));
+
+  // Accadde oggi
+  const md = today().slice(5);
+  const past = days.filter(d => d.date.slice(5) === md && d.date < today());
+  $('#onThisDay').innerHTML = past.length ? `<div class="card memory"><h2>✨ Accadde oggi</h2>${past.map(d => dayItemHTML(d, thByDate[d.date])).join('')}</div>` : '';
+
+  // Statistiche dell'anno
+  const y = today().slice(0,4);
+  const yDays = days.filter(d => d.date.startsWith(y));
+  const counts = {};
+  yDays.forEach(d => d.activities.forEach(a => { const k = a.emoji + ' ' + a.label; counts[k] = (counts[k]||0) + 1; }));
+  const top = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  const moods = yDays.filter(d => d.mood); const avg = moods.length ? moods.reduce((s,d) => s + d.mood, 0) / moods.length : 0;
+  $('#statsCard').innerHTML = `<h2>Il tuo ${y}</h2>
+    <div class="stat"><span>Giorni scritti</span><b>${yDays.length}</b></div>
+    <div class="stat"><span>Pensieri</span><b>${thoughts.filter(t => t.date.startsWith(y)).length}</b></div>
+    ${avg ? `<div class="stat"><span>Umore medio</span><b>${MOODS[Math.round(avg)-1]} ${avg.toFixed(1)}</b></div>` : ''}
+    ${top.map(([k,v]) => `<div class="stat"><span>${esc(k)}</span><b>${v}</b></div>`).join('')}`;
+
+  // Lista giorni (con ricerca)
+  let list = days;
+  const allDates = new Set(days.map(d => d.date));
+  Object.keys(thByDate).forEach(dt => { if (!allDates.has(dt)) list.push(emptyDay(dt)); });
+  list.sort((a,b) => b.date.localeCompare(a.date));
+  if (q) list = list.filter(d => {
+    const hay = [d.summary, d.recap, ...d.activities.map(a => a.label + ' ' + a.note), ...(thByDate[d.date]||[]).map(t => t.text), fmtLong(d.date)].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+  $('#dayList').innerHTML = list.length ? list.slice(0, 300).map(d => dayItemHTML(d, thByDate[d.date])).join('') : `<div class="sub">${q ? 'Nessun risultato.' : 'Il diario è ancora vuoto. Inizia da oggi!'}</div>`;
+}
+function dayItemHTML(d, th = []){
+  const em = d.activities.map(a => a.emoji).join(' ');
+  const snip = d.summary || d.recap || d.activities.map(a => a.label + (a.note ? ': ' + a.note : '')).join(' · ') || th[0]?.text || '';
+  return `<div class="dayitem" data-day="${d.date}">
+    <div class="row between"><b>${cap(fmtShort(d.date))}</b><span>${d.mood ? MOODS[d.mood-1] : ''}${th.length ? ' 💭' + th.length : ''}</span></div>
+    ${em ? `<div style="margin-top:4px">${em}</div>` : ''}
+    ${snip ? `<div class="snip">${esc(snip)}</div>` : ''}
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-day]'); if (!el) return;
+  loadDay(el.dataset.day); show('today'); scrollTo(0,0);
+});
+$('#search').oninput = debounce(renderArchive, 250);
+
+/* =================== IMPOSTAZIONI =================== */
+function renderSettings(){
+  $('#presetEditor').innerHTML = S.presets.map((p,i) => `
+    <div class="presetrow" data-i="${i}">
+      <input value="${esc(p.emoji)}" data-f="emoji" style="text-align:center">
+      <input value="${esc(p.label)}" data-f="label">
+      <button class="ghost" data-pdel="${i}">✕</button>
+      <span></span><input value="${esc(p.kw)}" data-f="kw" class="kw" placeholder="parole chiave"><span></span>
+    </div>`).join('');
+  $('#apiKey').value = S.apiKey; $('#model').value = S.model;
+  updateBackupInfo();
+}
+function readPresetEditor(){
+  return [...document.querySelectorAll('.presetrow')].map(r => {
+    const i = +r.dataset.i, g = f => r.querySelector(`[data-f="${f}"]`).value.trim();
+    return { id: S.presets[i]?.id || uid(), emoji: g('emoji') || '•', label: g('label'), kw: g('kw') };
+  }).filter(p => p.label);
+}
+$('#presetEditor').onclick = e => {
+  const i = e.target.dataset.pdel; if (i === undefined) return;
+  S.presets = readPresetEditor(); S.presets.splice(+i, 1); renderSettings();
+};
+$('#addPreset').onclick = () => { S.presets = readPresetEditor(); S.presets.push({ id: uid(), emoji: '⭐', label: 'Nuova attività', kw: '' }); renderSettings(); };
+$('#savePresets').onclick = async () => { S.presets = readPresetEditor(); await DB.saveSetting('presets', S.presets); toast('Attività salvate ✓'); renderToday(); };
+$('#saveAi').onclick = async () => {
+  S.apiKey = $('#apiKey').value.trim(); S.model = $('#model').value.trim() || DEFAULT_MODEL;
+  await DB.saveSetting('apiKey', S.apiKey); await DB.saveSetting('model', S.model); toast('Salvato ✓');
+};
+
+async function updateBackupInfo(){
+  const last = await DB.setting('lastBackup', null);
+  const n = (await DB.all('days')).length;
+  let persist = '';
+  if (navigator.storage?.persisted) persist = (await navigator.storage.persisted()) ? ' · archiviazione protetta ✓' : '';
+  $('#backupInfo').textContent = `${n} giorni nel diario · ultimo backup: ${last ? new Date(last).toLocaleDateString('it-IT') : 'mai'}${persist}`;
+}
+const blobToDataURL = b => new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
+
+$('#exportBtn').onclick = async () => {
+  const days = await DB.all('days');
+  const thoughts = await Promise.all((await DB.all('thoughts')).map(async t => ({ ...t, audio: t.audio ? await blobToDataURL(t.audio) : null })));
+  const data = { app: 'diario', version: 1, exportedAt: new Date().toISOString(), presets: S.presets, days, thoughts };
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const name = `diario-backup-${today()}.json`;
+  const file = new File([blob], name, { type: 'application/json' });
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); } catch(e) { if (e.name === 'AbortError') return; }
+  } else {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  }
+  await DB.saveSetting('lastBackup', Date.now()); updateBackupInfo();
+};
+$('#importBtn').onclick = () => $('#importFile').click();
+$('#importFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (data.app !== 'diario') throw new Error('File non valido');
+    if (!confirm(`Importare ${data.days.length} giorni e ${data.thoughts.length} pensieri? I giorni con la stessa data verranno sovrascritti.`)) return;
+    for (const d of data.days) await DB.put('days', d);
+    for (const t of data.thoughts) {
+      const audio = t.audio ? await (await fetch(t.audio)).blob() : null;
+      await DB.put('thoughts', { ...t, audio });
+    }
+    if (data.presets?.length) { S.presets = data.presets; await DB.saveSetting('presets', S.presets); }
+    toast('Backup importato ✓'); loadDay(S.date); renderSettings();
+  } catch (err) { toast('Errore: ' + err.message); }
+  e.target.value = '';
+};
+
+/* =================== NAVIGAZIONE =================== */
+function show(v){
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  if (v === 'thoughts') renderThoughts();
+  if (v === 'archive') renderArchive();
+  if (v === 'settings') renderSettings();
+  if (v !== 'thoughts') thoughtDate = null;
+}
+document.querySelector('.tabs').onclick = e => { const b = e.target.closest('button'); if (b) { if (b.dataset.v === 'thoughts') thoughtDate = null; show(b.dataset.v); } };
+
+/* =================== AVVIO =================== */
+(async () => {
+  await DB.open();
+  S.presets = await DB.setting('presets', DEFAULT_PRESETS);
+  S.apiKey = await DB.setting('apiKey', '');
+  S.model = await DB.setting('model', DEFAULT_MODEL);
+  navigator.storage?.persist?.();
+  await loadDay(today());
+  // se l'app resta aperta oltre mezzanotte, torna su "oggi" quando la riapri
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && S.date !== today() && S.date === addDays(today(), -1) && !S.day.updatedAt) loadDay(today()); });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
